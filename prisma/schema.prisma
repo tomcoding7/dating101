@@ -1,0 +1,97 @@
+// This is your Prisma schema file
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  password      String
+  bio           String?
+  age           Int
+  gender        String
+  location      String?
+  profileImage  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Video content
+  reels         Reel[]
+  streams       Stream[]
+  
+  // Matching
+  preferences   Preference?
+  matches       Match[]    @relation("UserMatches")
+  matchedWith   Match[]    @relation("MatchedWith")
+  
+  // Messages
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+}
+
+model Reel {
+  id          String    @id @default(cuid())
+  videoUrl    String
+  caption     String?
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  likes       Int       @default(0)
+  createdAt   DateTime  @default(now())
+}
+
+model Stream {
+  id          String    @id @default(cuid())
+  title       String
+  streamKey   String    @unique
+  isLive      Boolean   @default(false)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  viewers     Int       @default(0)
+  startedAt   DateTime  @default(now())
+  endedAt     DateTime?
+}
+
+model Preference {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id])
+  ageRange        Int[]
+  gender          String[]
+  location        String?
+  interests       String[]
+  dealBreakers    String[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Match {
+  id              String    @id @default(cuid())
+  user1Id         String
+  user2Id         String
+  user1           User      @relation("UserMatches", fields: [user1Id], references: [id])
+  user2           User      @relation("MatchedWith", fields: [user2Id], references: [id])
+  matchScore      Float
+  matchReason     String
+  isAccepted      Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([user1Id, user2Id])
+}
+
+model Message {
+  id          String    @id @default(cuid())
+  content     String
+  senderId    String
+  receiverId  String
+  sender      User      @relation("SentMessages", fields: [senderId], references: [id])
+  receiver    User      @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  isRead      Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+} 
